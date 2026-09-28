@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Manga Tracker</title>
+        <link rel="stylesheet" href="/static/styles.css">
+    </head>
+    <body>
+        <header class="app-header">
+            <div class="header-container">
+                <h1 class="logo">Manga Tracker</h1>
+                <div class="user-selector">
+                    <label for="userSelect">User:</label>
+                    <select id="userSelect">
+                        <option value="1">Demo User</option>
+                    </select>
+                </div>
+            </div>
+            <nav class="nav-tabs">
+                <button class="tab-btn active" data-tab="All">All Manga</button>
+                <button class="tab-btn" data-tab="Reading">Reading</button>
+                <button class="tab-btn" data-tab="Plan to Read">Plan to Read</button>
+                <button class="tab-btn" data-tab="Completed">Completed</button>
+                <button class="tab-btn" data-tab="Dropped">Dropped</button>
+                <button class="tab-btn search-tab-btn" id="openSearchBtn">🔍 Search Manga</button>
+            </nav>
+        </header>
+
+        <main class="container">
+            <section id="libraryView">
+                <div id="libraryGrid" class="manga-grid">
+                    <!-- Manga cards-->
+                </div>
+                <div id="emptyLibraryMsg" class="empty-state hidden">
+                    <p>No manga found in this catergory</p>
+                </div>
+            </section>
+
+            <section id="searchModal" class="modal hidden">
+                <div class="modal-content large-modal">
+                    <div class="modal-header">
+                        <h2>Search MangaDex</h2>
+                        <button class="close-btn" id="closeSearchBtn">&times;</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search title...">
+                        <button id="searchSubmitBtn">Search</button>
+                    </div>
+                    <div id="searchResultsGrid" class="manga-grid">
+                        <!-- Search results via js-->
+                    </div>
+                </div>
+            </section>
+
+            <section id="editModal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="editMangaTitle">Edit Progress</h3>
+                        <button class="close-btn" id="closeEditBtn">&times;</button>
+                    </div>
+                    <form id="editMangaForm">
+                        <input type="hidden" id="editMangaId">
+
+                        <div class="form-group">
+                            <label for="editStatus">Status</label>
+                            <select id="editStatus" required>
+                                <option value="Reading">Reading</option>
+                                <option value="Plan to Read">Plan to Read</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Dropped">Dropped</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editChapter">Last Chapter Read</label>
+                            <input type="number"  id="editChapter" step="0.5" min="0" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editScore">Score (1.0-10.0)</label>
+                            <input type="number" id="editScore" step="0.1" min="1" max="10" placeholder="Unrated">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" id="cancelEditBtn">Cancel</button>
+                            <button type="submit" class="btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </main>
+
+        <script src="/static/app.js" defer></script>
+    </body>
+</html>
