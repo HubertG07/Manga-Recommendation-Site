@@ -80,7 +80,7 @@ class MangaDexClient:
 
     async def fetch_manga_by_id(self, manga_id: str) -> Dict[str, Any]:
         params = {"includes[]": ["author", "artist", "cover_art"]}
-        res = await self._request("GET" f"/manga/{manga_id}", params=params)
+        res = await self._request("GET", f"/manga/{manga_id}", params=params)
         return self._normalize_manga(res.get("data", {}))
 
 mangadex_client = MangaDexClient()
