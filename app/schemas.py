@@ -55,3 +55,18 @@ class ChapterLogRead(BaseModel):
     rating: Optional[float]
     notes: Optional[str]
     created_at: datetime
+
+class RecommendationRead(BaseModel):
+    manga_id: str
+    title: str
+    cover_filename: Optional[str] = None
+    authors: List[str]
+    tags: List[str]
+    demographic: Optional[str] = None
+    publication_status: Optional[str] = None
+    match_score: float = Field(..., description="Cosine similarity score scaled, 0-1")
+
+class FeedbackCreate(BaseModel):
+    user_id: int
+    manga_id: str
+    feedback_type: FeedbackType

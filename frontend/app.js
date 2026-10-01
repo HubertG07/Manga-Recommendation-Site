@@ -39,7 +39,14 @@ function setupEventListeners() {
             document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
             e.target.classList.add("active");
             currentTabStatus = e.target.dataset.tab;
-            renderLibrary();
+            if (currentTabStatus === "Recommendations")
+            {
+                renderRecommendations();
+            }
+            else
+            {
+                renderLibrary();
+            }
         });
     });
 
@@ -216,5 +223,76 @@ async function handleEditSubmit(e) {
         await loadUserLibrary();
     } catch (err) {
         alert("Error saving manga progress: " + err.message);
+    }
+}
+
+async function renderRecommendations() {
+    libraryGrid.innerHTML = "<p style='grid-column: 1/-1; text-align:center;'>Finding recommendations based on your tastes...</p>";
+    
+    try{
+        const res = await fetch(`${API_BASE}/recommendations/${currentUserId}?limit=50`);
+        if (!res.ok) throw new Error("Failed Loading recommendations");
+        const recs = await res.json();
+
+        libraryGrid.innerHTML = "";
+        if (recs.length === 0) {
+            libraryGrid.innerHTML = "<p style='grid-column: 1/-1; text-align:center;'>Add and rate more manga in your library to generate recommendations!</p>";
+            return;
+        }
+
+        recs.forEach(rec => {
+            mangaCacheMap.set(rec.manga_id, rec);
+
+            const card = document.createElement("div");
+            card.className = "manga-card";
+
+            const coverUrl = rec.cover_filename
+                ? `https://uploads.mangadex.org/covers/${rec.manga_id}/${rec.cover_filename}`
+                : "No Cover Placeholder";
+
+            const matchPct = Math.round(rec.match_score * 100);
+
+            card.innerHTML = `
+                <div class="cover-wrapper">
+                    <img class="cover-img" src="${coverUrl}" alt="${rec.title}" loading="lazy">
+                    <span class="card-badge" style="color: #34d399;">${matchPct}% Match</span>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">${rec.title}</h3>
+                    <div style="display: flex; gap: 0.3rem; margin-top: 0.5rem;">
+                        <button class="btn-feedback" data-type="INTERESTED">👍</button>
+                        <button class="btn-feedback" data-type="NOT_INTERESTED">👎</button>
+                        <button class="btn-feedback" data-type="HATE">🚫</button>
+                        <button class="btn-add" style="margin-top:0; padding: 0.3rem;">+ Add</button>
+                    </div>
+                </div>
+            `;
+
+            card.querySelectorAll(".btn-feedback").forEach(btn => {
+                btn.addEventListener("click", async (e) => {
+                    e.stopPropagation();
+                    const fbType = btn.dataset.type;
+                    await fetch(`${API_BASE}/recommendations/feedback`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            user_id: currentUserId,
+                            manga_id: rec.manga_id,
+                            feedback_type: fbType
+                        })
+                    });
+                    renderRecommendations();
+                });
+            });
+
+            card.querySelector(".btn-add").addEventListener("click", (e) => {
+                e.stopPropagation();
+                openAddModal(rec);
+            });
+
+            libraryGrid.appendChild(card);
+        });
+    } catch (err) {
+        libraryGrid.innerHTML = `<p style='grid-column: 1/-1; text-align:center; color:#ef4444;'>Error: ${err.message}</p>`;
     }
 }

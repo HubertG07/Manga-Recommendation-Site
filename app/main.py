@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 import os
 
 from app.database import init_db
-from app.routers import users, manga, list_entries
+from app.routers import users, manga, list_entries, recommendations
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,6 +21,7 @@ app = FastAPI(
 app.include_router(users.router)
 app.include_router(manga.router)
 app.include_router(list_entries.router)
+app.include_router(recommendations.router)
 
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 app.mount("/static", StaticFiles(directory=frontend_path), name="static")
