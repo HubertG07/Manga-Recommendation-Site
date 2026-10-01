@@ -10,33 +10,35 @@ from app.schemas import RecommendationRead, FeedbackCreate
 from app.services.recommender import manga_recommender
 from app.services.mangadex import mangadex_client
 
+import random
+
 router = APIRouter(prefix="/recommendations", tags=["Recommendations"])
 
 @router.get("/{user_id}", response_model=List[RecommendationRead])
 async def get_recommendations(
     user_id: int,
     limit: int = Query(default=10, ge=1, le=50),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    refresh: bool = Query(default=False)
 ):
     user = await session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User Not Found")
 
-    cached_res = await session.execute(select(MangaCache))
-    all_cached_manga = list(cached_res.scalars().all())
-
-    if len(all_cached_manga) < 15:
+    if refresh:
         try:
-            popular_manga = await mangadex_client.search_manga(query="", limit=20)
-            for m_data in popular_manga:
+            offset = random.randint(0, 100)
+            new_candidates = await mangadex_client.search_manga(query="", limit=20, offset=offset)
+            for m_data in new_candidates:
                 existing = await session.get(MangaCache, m_data["manga_id"])
                 if not existing:
-                    new_cache = MangaCache(**m_data)
-                    session.add(new_cache)
-                    all_cached_manga.append(new_cache)
+                    session.add(MangaCache(**m_data))
             await session.commit()
         except Exception:
             pass
+
+    cached_res = await session.execute(select(MangaCache))
+    all_cached_manga = list(cached_res.scalars().all())
 
     user_list_res = await session.execute(
         select(UserMangaList).where(UserMangaList.user_id == user_id)
@@ -53,6 +55,7 @@ async def get_recommendations(
         user_list_entries=user_list_entries,
         feedback_entries=feedback_entries,
         top_n=limit,
+        shuffle=refresh,
     )
 
     return [

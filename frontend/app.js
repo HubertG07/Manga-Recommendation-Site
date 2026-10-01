@@ -13,6 +13,12 @@ const searchResultsGrid = document.getElementById("searchResultsGrid");
 const editForm = document.getElementById("editMangaForm");
 
 document.addEventListener("DOMContentLoaded", async () => {
+    const refreshBtn = document.getElementById("btn-refresh-recs");
+    if (refreshBtn)
+    {
+        refreshBtn.addEventListener("click", () => renderRecommendations(true));
+    }
+
     await initializeUser();
     setupEventListeners();
     await loadUserLibrary();
@@ -41,7 +47,7 @@ function setupEventListeners() {
             currentTabStatus = e.target.dataset.tab;
             if (currentTabStatus === "Recommendations")
             {
-                renderRecommendations();
+                renderRecommendations(false);
             }
             else
             {
@@ -86,6 +92,9 @@ async function loadUserLibrary() {
 }
 
 function renderLibrary() {
+    const recControls = document.getElementById("rec-controls");
+    if (recControls) recControls.style.display = "none";
+
     libraryGrid.innerHTML = "";
 
     const filtered = userLibraryEntries.filter(entry => {
@@ -226,11 +235,14 @@ async function handleEditSubmit(e) {
     }
 }
 
-async function renderRecommendations() {
+async function renderRecommendations(isRefresh = false) {
+    const recControls = document.getElementById("rec-controls");
+    if (recControls) recControls.style.display = "flex";
+
     libraryGrid.innerHTML = "<p style='grid-column: 1/-1; text-align:center;'>Finding recommendations based on your tastes...</p>";
     
     try{
-        const res = await fetch(`${API_BASE}/recommendations/${currentUserId}?limit=50`);
+        const res = await fetch(`${API_BASE}/recommendations/${currentUserId}?limit=50&refresh=${isRefresh}`);
         if (!res.ok) throw new Error("Failed Loading recommendations");
         const recs = await res.json();
 
@@ -281,7 +293,7 @@ async function renderRecommendations() {
                             feedback_type: fbType
                         })
                     });
-                    renderRecommendations();
+                    renderRecommendations(true);
                 });
             });
 

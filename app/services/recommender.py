@@ -46,7 +46,9 @@ class MangaRecommender:
             all_cached_manga: List[MangaCache],
             user_list_entries: List[UserMangaList],
             feedback_entries: List[RecommendationFeedback],
-            top_n: int = 10
+            top_n: int = 10,
+            shuffle: bool = False,
+            temperature: float = 0.5,
     ) -> List[Tuple[MangaCache, float]]:
         """Gives recommendations for a user given their library history and feedback
         Returns a list of (MangaCache object, calculated_match_score) tuples"""
@@ -113,7 +115,7 @@ class MangaRecommender:
 
         similarities = cosine_similarity(user_vector, candidate_matrix).flatten()
 
-        recommendations: List[Tuple[MangaCache, float]] = []
+        candidates: List[Tuple[MangaCache, float]] = []
 
         for idx, row in candidate_df.reset_index(drop=True).iterrows():
             m_id = row["manga_id"]
@@ -129,11 +131,30 @@ class MangaRecommender:
                 final_score = raw_score
 
             final_score = max(0.0, min(1.0, round(final_score, 4)))
+            if final_score > 0.0:
+                candidates.append((manga_dict[m_id], final_score))
 
-            manga_obj = manga_dict[m_id]
-            recommendations.append((manga_obj, final_score))
+        candidates.sort(key=lambda x: x[1], reverse=True)
 
-        recommendations.sort(key=lambda x: x[1], reverse=True)
-        return recommendations[:top_n]
+        if not candidates:
+            return []
+
+        if not shuffle or len(candidates) <= top_n:
+            return candidates[:top_n]
+
+        pool = candidates[: min(len(candidates), top_n * 3)]
+        scores = np.array([sc for _, sc in pool])
+
+        logits = scores / max(temperature, 0.01)
+        exp_logits = np.exp(logits - np.max(logits))
+        probs = exp_logits / np.sum(exp_logits)
+
+        selected_indices = np.random.choice(
+            len(pool), size=min(top_n, len(pool)), replace=False, p=probs
+        )
+
+        selected = [pool[i] for i in selected_indices]
+        selected.sort(key=lambda x: x[1], reverse=True)
+        return selected
 
 manga_recommender = MangaRecommender()
